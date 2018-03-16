@@ -5,11 +5,20 @@
 #include <termios.h>
 #include <unistd.h>
 
+//defines
+
 #define CTRL_KEY(k) ((k) & 0x1f)
+
+//data
 
 struct termios orig_termios;
 
-void die(const char *s) { //function that prints out error msg and exits
+//Functions that work with the terminal
+
+void die(const char *s) {
+  write(STDOUT_FILENO, "\x1b[2J", 4);
+  write(STDOUT_FILENO, "\x1b[H", 3);
+  
   perror(s);
   exit(1);
 }
@@ -30,7 +39,7 @@ void enableRawMode() {
   raw.c_cflag |= (CS8);
   raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG); 
   raw.c_cc[VMIN] = 0; //how many bytes need to be read before returning
-  raw.c_cc[VTIME] = 1; //input wait time
+  raw.c_cc[VTIME] = 100; //input wait time, 1 = .1 seconds
   
   if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
 }
@@ -46,11 +55,18 @@ char editorReadKey() {
   return c;
 }
 
+void editorRefreshScreen() {
+  write(STDOUT_FILENO, "\x1b[2J", 4); // \x1b is an escape sequence that allows us to use text formatting tasks
+  write(STDOUT_FILENO, "\x1b[H", 3);
+}
+
 void editorProcessKeypress() {
   char c = editorReadKey();
   
   switch (c) {
     case CTRL_KEY('q'):
+      write(STDOUT_FILENO, "\x1b[2J", 4);
+      write(STDOUT_FILENO, "\x1b[H", 3);
       exit(0);
       break;
   }
@@ -60,6 +76,7 @@ int main() {
   enableRawMode();
   
   while (1) {
+    editorRefreshScreen();
     editorProcessKeypress();
   }
   return 0;
