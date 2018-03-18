@@ -11,7 +11,11 @@
 
 //data
 
-struct termios orig_termios;
+struct editorConfig {
+  struct termios orig_termios;
+};
+
+struct editorConfig E;
 
 //Functions that work with the terminal
 
@@ -24,15 +28,15 @@ void die(const char *s) {
 }
 
 void disableRawMode() {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) //checking for errors
+  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1) //checking for errors
     die("tcsetattr");
 }
 
 void enableRawMode() {
-  if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr"); //checking for errors
+  if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1) die("tcgetattr");//checking for errors
   atexit(disableRawMode);
   
-  struct termios raw = orig_termios;
+  struct termios raw = E.orig_termios;
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
   raw.c_iflag &= ~(ICRNL | IXON);
   raw.c_oflag &= ~(OPOST);
@@ -55,8 +59,20 @@ char editorReadKey() {
   return c;
 }
 
+/* OUTPUT FUNCTIONS */
+void editorDrawRows() {
+  int y;
+  
+  for (y = 0; y < 24; y++) {
+    write(STDOUT_FILENO, "~\r\n", 3);
+  }
+}
+
 void editorRefreshScreen() {
   write(STDOUT_FILENO, "\x1b[2J", 4); // \x1b is an escape sequence that allows us to use text formatting tasks
+  write(STDOUT_FILENO, "\x1b[H", 3);
+  
+  editorDrawRows();
   write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
