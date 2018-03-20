@@ -6,11 +6,11 @@
 #include <termios.h>
 #include <unistd.h>
 
-//defines
+                                              /*defines*/
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
-//data
+                                              /*data */
 
 struct editorConfig {
   int screenrows;
@@ -20,7 +20,7 @@ struct editorConfig {
 
 struct editorConfig E;
 
-//Functions that work with the terminal
+                                  /*Functions that work with the terminal */
 
 void die(const char *s) {
   write(STDOUT_FILENO, "\x1b[2J", 4);
@@ -62,13 +62,37 @@ char editorReadKey() {
   return c;
 }
 
+int getCursorPosition(int *rows, int *cols) {
+  char buf[32];
+  unsigned int i = 0;
+  
+  if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) 
+    return -1;
+    
+  while (i < sizeof(buf) - 1) {
+    if (read(STDIN_FILENO, &buf[i], 1) != 1) 
+      break;
+    if (buf[i] == 'R') 
+      break;
+    i++;
+  }
+  
+  buf[i] = '\0';
+  
+  if (buf[0] != '\x1b' || buf[1] != '[') 
+    return -1;
+  if (sscanf(&buf[2], "%d;%d", rows, cols) != 2) 
+    return -1;
+    
+  return 0;
+}
+
 int getWindowSize(int *rows, int *cols) {
   struct winsize ws;
   
   if (1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
     if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) return -1; //B moves cursor down, C moves it right
-    editorReadKey();
-    return -1;
+    return getCursorPosition(rows, cols);
   }
   
   else {
@@ -78,7 +102,7 @@ int getWindowSize(int *rows, int *cols) {
   }
 }
 
-/* OUTPUT FUNCTIONS */
+                                      /* OUTPUT FUNCTIONS */
 void editorDrawRows() {
   int y;
   
@@ -107,7 +131,7 @@ void editorProcessKeypress() {
   }
 }
 
-/* Functions that help initialize the text editor */
+                            /* Functions that help initialize the text editor */
 void initEditor() {
   if (getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
