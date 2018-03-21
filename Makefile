@@ -1,14 +1,5 @@
-CC = g++
-CC_FLAGS = -Wall -ansi
-EXEC = editor
-SOURCES = $(wildcard *.cpp)
-OBJECTS = $(SOURCES:.cpp=.o)
+all: editor.c 
+	gcc -g -Wall -o editor editor.c
 
-$(EXEC): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(EXEC)
-
-%.o: %.cpp
-	$(CC) -c $(CC_FLAGS) $< -o $@
-
-clean:
-	rm -f $(EXEC) $(OBJECTS)
+  clean: 
+	  $(RM) editor
